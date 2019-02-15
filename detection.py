@@ -1,7 +1,3 @@
-# Jessika Hilton Hunt
-# Started: 15 February, 2019
-# Last Updated: 15 February, 2019
-
 #Import Libraries
 import numpy as np
 import pandas as pd
@@ -65,94 +61,6 @@ def store_images_from_csv(imageType, filePath, isInfected):
         except AttributeError:
             print('Error storing image ' + imageType + ' ' + i)
             return 0
-
-#store the infected images
-store_images_from_csv('infected', "../malaria/cell_images/cell_images/Parasitized/", 1)
-
-#repeat the process for uninfected images
-store_images_from_csv('uninfected', "../malaria/cell_images/cell_images/Uninfected/", 0)
-
-#combine all cell images into one array
-cells = np.array(data)
-
-#combine all labels into one array
-labels = np.array(labels)
-
-#save cells and labels to hard files
-np.save('Cells', cells)
-np.save('Labels', labels)
-
-#double check our work to make sure the data exist
-#The printed statement should be:
-#Cells : (96453, 50, 50, 3) | labels : (96453,)
-#print('Cells : {} | labels : {}'.format(cells.shape, labels.shape))
-
-#let's look at some of the cells - this shows 50 images
-plt.figure(1, figsize=(15, 9))
-n = 0
-for i in range(50):
-    n += 1
-    r = np.random.randint(0, cells.shape[0], 1)
-    plt.subplot(7, 8, n)
-    plt.subplots_adjust(hspace=0.5, wspace=0.5)
-    plt.imshow(cells[r[0]])
-    #look at the label for the image, and label it as Infected or Uninfected based on the label
-    plt.title('{} : {}'.format('Infected' if labels[r[0]] == 1 else 'Uninfected', labels[r[0]]))
-    plt.xticks([])
-    plt.yticks([])
-plt.show()
-
-#now let's look at an infected and an uninfected cell, side by side
-plt.figure(1, figsize=(15, 7))
-#subplot: 1 pane, 2 images, set the following image as the first
-plt.subplot(1, 2, 1)
-plt.imshow(cells[0])
-plt.title('Infected Cell')
-plt.xticks([])
-plt.yticks([])
-
-#subplot: 1 pane, 2 images, set the following as the second image
-plt.subplot(1, 2, 2)
-plt.imshow(cells[60000])
-plt.title('Uninfected Cell')
-plt.xticks([])
-plt.yticks([])
-
-plt.show()
-
-#Moving on
-#Shuffle the images
-n = np.arange(cells.shape[0])
-np.random.shuffle(n)
-cells = cells[n]
-labels = labels[n]
-
-#Set up the splits for training, evaluating, and testing
-cells = cells.astype(np.float32)
-labels = labels.astype(np.int32)
-cells = cells/255
-
-#Use sklearn.model_selection.train_test_split to get subsets of the data
-#for training data, take 20% of the dataset
-train_x, x, train_y, y = train_test_split(cells, labels, test_size=0.2, random_state=111)
-eval_x, test_x, eval_y, test_y = train_test_split(x, y, test_size=0.5, random_state=111)
-
-#Sanity Check: verify the distributions are roughly equal in each set
-plt.figure(1, figsize=(15, 5))
-n = 0
-for z, j in zip([train_y, eval_y, test_y] , ['train labels', 'eval labels', 'test labels']):
-    n += 1
-    plt.subplot(1, 3, n)
-    sns.countplot(x = z)
-    plt.title(j)
-plt.show()
-#Show how many images are in each set
-#Result statement should be:
-#train data shape (77162, 50, 50, 3) | eval data shape (9645, 50, 50, 3) | test data shape (9646, 50, 50, 3)
-print('train data shape {} | eval data shape {} | test data shape {}'.format(train_x.shape, eval_x.shape, test_x.shape))
-
-#Clear the default graph stack and reset the global default graph (from TensorFlow docs)
-tf.reset_default_graph()
 
 #Basic overview of a cnn (convolutional neural network):
 #A neural network takes data from multiple neurons and
@@ -294,6 +202,93 @@ def cnn_model(features, labels, mode):
     eval_metric_op = {'accuracy':tf.metrics.accuracy(labels=labels, predictions=predictions['classes'])}
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_op)
 
+#store the infected images
+store_images_from_csv('infected', "../malaria/cell_images/cell_images/Parasitized/", 1)
+
+#repeat the process for uninfected images
+store_images_from_csv('uninfected', "../malaria/cell_images/cell_images/Uninfected/", 0)
+
+#combine all cell images into one array
+cells = np.array(data)
+
+#combine all labels into one array
+labels = np.array(labels)
+
+#save cells and labels to hard files
+np.save('Cells', cells)
+np.save('Labels', labels)
+
+#double check our work to make sure the data exist
+#The printed statement should be:
+#Cells : (96453, 50, 50, 3) | labels : (96453,)
+#print('Cells : {} | labels : {}'.format(cells.shape, labels.shape))
+
+#let's look at some of the cells - this shows 50 images
+plt.figure(1, figsize=(15, 9))
+n = 0
+for i in range(50):
+    n += 1
+    r = np.random.randint(0, cells.shape[0], 1)
+    plt.subplot(7, 8, n)
+    plt.subplots_adjust(hspace=0.5, wspace=0.5)
+    plt.imshow(cells[r[0]])
+    #look at the label for the image, and label it as Infected or Uninfected based on the label
+    plt.title('{} : {}'.format('Infected' if labels[r[0]] == 1 else 'Uninfected', labels[r[0]]))
+    plt.xticks([])
+    plt.yticks([])
+plt.show()
+
+#now let's look at an infected and an uninfected cell, side by side
+plt.figure(1, figsize=(15, 7))
+#subplot: 1 pane, 2 images, set the following image as the first
+plt.subplot(1, 2, 1)
+plt.imshow(cells[0])
+plt.title('Infected Cell')
+plt.xticks([])
+plt.yticks([])
+
+#subplot: 1 pane, 2 images, set the following as the second image
+plt.subplot(1, 2, 2)
+plt.imshow(cells[60000])
+plt.title('Uninfected Cell')
+plt.xticks([])
+plt.yticks([])
+plt.show()
+
+#Moving on
+#Shuffle the images
+n = np.arange(cells.shape[0])
+np.random.shuffle(n)
+cells = cells[n]
+labels = labels[n]
+
+#Set up the splits for training, evaluating, and testing
+cells = cells.astype(np.float32)
+labels = labels.astype(np.int32)
+cells = cells/255
+
+#Use sklearn.model_selection.train_test_split to get subsets of the data
+#for training data, take 20% of the dataset
+train_x, x, train_y, y = train_test_split(cells, labels, test_size=0.2, random_state=111)
+eval_x, test_x, eval_y, test_y = train_test_split(x, y, test_size=0.5, random_state=111)
+
+#Sanity Check: verify the distributions are roughly equal in each set
+plt.figure(1, figsize=(15, 5))
+n = 0
+for z, j in zip([train_y, eval_y, test_y] , ['train labels', 'eval labels', 'test labels']):
+    n += 1
+    plt.subplot(1, 3, n)
+    sns.countplot(x = z)
+    plt.title(j)
+plt.show()
+#Show how many images are in each set
+#Result statement should be:
+#train data shape (77162, 50, 50, 3) | eval data shape (9645, 50, 50, 3) | test data shape (9646, 50, 50, 3)
+print('train data shape {} | eval data shape {} | test data shape {}'.format(train_x.shape, eval_x.shape, test_x.shape))
+
+#Clear the default graph stack and reset the global default graph (from TensorFlow docs)
+tf.reset_default_graph()
+
 #Initialize the model through TensorFlow as malaria_detector
 malaria_dectector = tf.estimator.Estimator(model_fn=cnn_model, model_dir='/tmp/modelchpt')
 
@@ -321,7 +316,6 @@ eval_input = tf.estimator.inputs.numpy_input_fn(
     num_epochs=None,
     shuffle=False
 )
-
 #Evaluate the model
 eval_results = malaria_dectector.evaluate(input_fn=eval_input)
 print(eval_results)
@@ -333,7 +327,6 @@ predict_input = tf.estimator.inputs.numpy_input_fn(
     num_epochs=1,
     shuffle=False
 )
-
 #Use the model to predict
 predictions = malaria_dectector.predict(input_fn=predict_input)
 classes = [p['classes'] for p in predictions]
