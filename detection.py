@@ -8,7 +8,7 @@ import seaborn as sns
 from PIL import Image
 import os
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix , classification_report , accuracy_score
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 
 #Check that the two image sets exist
 #print(os.listdir("../malaria/cell_images/cell_images"))
@@ -108,6 +108,9 @@ def cnn_model(features, labels, mode):
         padding='same',
         activation=tf.nn.relu
     )
+    #Some logging so we can see where we are in the process
+    print('Convolution Layer 1...')
+
     #Convolution Layer 2 - takes the information from the Convolution Layer 1 as the inputs
     convolution2 = tf.layers.conv2d(
         inputs=convolution1,
@@ -116,6 +119,8 @@ def cnn_model(features, labels, mode):
         padding='same',
         activation=tf.nn.relu
     )
+    print('Convolution Layer 2...')
+
     #Convolution Layer 3 - takes the information from the Convolution Layer 2 as the inputs
     convolution3 = tf.layers.conv2d(
         inputs=convolution2,
@@ -124,6 +129,7 @@ def cnn_model(features, labels, mode):
         padding='same',
         activation=tf.nn.relu
     )
+    print('Convolution Layer 3...')
 
     #Pooling Layer 1 - from the convolutional layers above that culminate in convolution3, we are going to use max
     #pooling to shrink the sample size and move towards feature extraction.
@@ -132,6 +138,7 @@ def cnn_model(features, labels, mode):
         pool_size=[2, 2],
         strides=2
     )
+    print('Pooling Layer 1...')
 
     #Feed the results of the first pooling layer through another convolution layer
     convolution4 = tf.layers.conv2d(
@@ -141,7 +148,7 @@ def cnn_model(features, labels, mode):
         padding='same',
         activation=tf.nn.relu
     )
-
+    print('Convolution Layer 4...')
 
     pool2 = tf.layers.max_pooling2d(
         inputs=convolution4,
@@ -149,8 +156,11 @@ def cnn_model(features, labels, mode):
         strides=2,
         padding='same'
     )
+    print('Pooling Layer 2...')
 
+    #Flatten so we can feed it into the fully-connected layers
     pool2_flatten = tf.layers.flatten(pool2)
+    print('Flattening...')
 
     #Now, feed the data into fully connected layers.  We use TensorFlow dense layers here.
     #Fully-connected layer 1
@@ -159,23 +169,30 @@ def cnn_model(features, labels, mode):
         units=2000,
         activation=tf.nn.relu
     )
+    print('Fully-connected Layer 1...')
+
     #Fully-connected layer 2 takes the fully-connected layer 1 as the input
     fc2 = tf.layers.dense(
         inputs=fc1,
         units=1000,
         activation=tf.nn.relu
     )
+    print('Fully-connected Layer 2...')
+
     #Fully-connected layer 3 takes fully-connected layer 2 as input
     fc3=tf.layers.dense(
         inputs=fc2,
         units=500,
         activation=tf.nn.relu
     )
+    print('Fully-connected Layer 3...')
+
     #Final fully-connected layer that takes in the third fully-connected layer as input
     logits = tf.layers.dense(
         inputs=fc3,
         units=2
     )
+    print('Final fully-connected Layer...')
 
     #Get our predictions from our model.  You can think of the "model" we've built above as the logits results from
     #the last fully-connected layer.
@@ -186,21 +203,33 @@ def cnn_model(features, labels, mode):
 
     #If we are using the function to predict, return the predictions we just gathered
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+        try:
+            print('Predicting...')
+            return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+        except:
+            print('Error using the model to predict in function.')
 
     loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 
     #If we are using the function to train the model, run optimization on the model to minimize loss and return the
     #performance estimates
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
-        train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+        try:
+            print('Training...')
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+            train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+            return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+        except:
+            print('Error training the model in function.')
 
     #Otherwise, the other option is using the function to evaluate the performance of our model.  We return the
     #performance estimates to do that.
-    eval_metric_op = {'accuracy':tf.metrics.accuracy(labels=labels, predictions=predictions['classes'])}
-    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_op)
+    try:
+        print('Evaluating...')
+        eval_metric_op = {'accuracy': tf.metrics.accuracy(labels=labels, predictions=predictions['classes'])}
+        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_op)
+    except:
+        print('Error evaluating the model in function.')
 
 #store the infected images
 store_images_from_csv('infected', "../malaria/cell_images/cell_images/Parasitized/", 1)
@@ -290,7 +319,10 @@ print('train data shape {} | eval data shape {} | test data shape {}'.format(tra
 tf.reset_default_graph()
 
 #Initialize the model through TensorFlow as malaria_detector
-malaria_dectector = tf.estimator.Estimator(model_fn=cnn_model, model_dir='/tmp/modelchpt')
+try:
+    malaria_dectector = tf.estimator.Estimator(model_fn=cnn_model, model_dir='/tmp/modelchpt')
+except:
+    print('Error initializing the model.')
 
 #Let's log some information about the model
 tensors_to_log = {'probabilities':'softmax_tensor'}
@@ -305,8 +337,11 @@ train_input = tf.estimator.inputs.numpy_input_fn(
     shuffle=True
 )
 #Train the model
-malaria_dectector.train(input_fn=train_input, steps=1, hooks=[logging_hook])
-malaria_dectector.train(input_fn=train_input, steps=1000)
+try:
+    malaria_dectector.train(input_fn=train_input, steps=1, hooks=[logging_hook])
+except:
+    print('Error training the model.')
+#malaria_dectector.train(input_fn=train_input, steps=1000)
 
 #Set up to evaluate the model
 eval_input = tf.estimator.inputs.numpy_input_fn(
@@ -317,8 +352,11 @@ eval_input = tf.estimator.inputs.numpy_input_fn(
     shuffle=False
 )
 #Evaluate the model
-eval_results = malaria_dectector.evaluate(input_fn=eval_input)
-print(eval_results)
+try:
+    eval_results = malaria_dectector.evaluate(input_fn=eval_input)
+    print(eval_results)
+except:
+    print('Error evaluating the model.')
 
 #Set up to use the model for PREDICTIONS!
 predict_input = tf.estimator.inputs.numpy_input_fn(
@@ -328,8 +366,11 @@ predict_input = tf.estimator.inputs.numpy_input_fn(
     shuffle=False
 )
 #Use the model to predict
-predictions = malaria_dectector.predict(input_fn=predict_input)
-classes = [p['classes'] for p in predictions]
+try:
+    predictions = malaria_dectector.predict(input_fn=predict_input)
+    classes = [p['classes'] for p in predictions]
+except:
+    print('Error predicting.')
 
 #Use sklearn to show us stats on how well we did
 print('{}\n{}\n{}'.format(
